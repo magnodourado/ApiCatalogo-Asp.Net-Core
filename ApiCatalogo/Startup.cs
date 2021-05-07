@@ -1,9 +1,11 @@
 using ApiCatalogo.Context;
+using ApiCatalogo.DTOs.Mappings;
 using ApiCatalogo.Extensions;
 using ApiCatalogo.Filters;
 using ApiCatalogo.Logging;
 using ApiCatalogo.Repository;
 using ApiCatalogo.Services;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -40,8 +42,17 @@ namespace ApiCatalogo
             services.AddDbContext<AppDbContext>(options => 
                 options.UseMySql(mySqlConnection, ServerVersion.AutoDetect(mySqlConnection)));
 
-            //Repositório utilizando o padrão Unit of Work
+            // Repositório utilizando o padrão Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // DTO - Criando o mapeamento de entidades utilizando AutoMapper
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
 
             // Serviço para injeção de dependencia no response da API (Produtos -> [HttpGet("saudacao/{nome}")] -> [FromServices] IMeuServico meuservico)
             services.AddTransient<IMeuServico, MeuServico>();

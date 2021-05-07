@@ -1,5 +1,7 @@
-﻿using ApiCatalogo.Models;
+﻿using ApiCatalogo.DTOs;
+using ApiCatalogo.Models;
 using ApiCatalogo.Repository;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -17,13 +19,15 @@ namespace ApiCatalogo.Controllers
         private readonly IUnitOfWork _uof;
         private readonly IConfiguration _configuration;
         private readonly ILogger _logger;
+        private readonly IMapper _mapper;
 
         public CategoriasController(IUnitOfWork contexto, IConfiguration configuration,
-            ILogger<CategoriasController> logger)
+            ILogger<CategoriasController> logger, IMapper mapper)
         {
             _uof = contexto;
             _configuration = configuration;
             _logger = logger;
+            _mapper = mapper;
         }
 
         [HttpGet("autor")]
@@ -36,13 +40,17 @@ namespace ApiCatalogo.Controllers
 
 
         [HttpGet]
-        public ActionResult<IEnumerable<Categoria>> Get() // O nome do método não altera o comportamento e sim o decorator [HttpGet]
+        public ActionResult<IEnumerable<CategoriaDTO>> Get() // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
             _logger.LogInformation("#################### GET api/categorias ###########################");
 
             try
             {
-                return _uof.CategoriaRepository.Get().ToList(); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
+                var categoria = _uof.CategoriaRepository.Get().ToList(); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
+
+                var categoriaDTO = _mapper.Map<List<CategoriaDTO>>(categoria);
+
+                return categoriaDTO;
             }
             catch (Exception)
             {
@@ -52,26 +60,33 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpGet("produtos")] // Vai compor a rota padrao Ex: api/categorias/produtos
-        public ActionResult<IEnumerable<Categoria>> GetCategoriasProdutos()
+        public ActionResult<IEnumerable<CategoriaDTO>> GetCategoriasProdutos()
         {
             _logger.LogInformation("#################### GET api/categorias/produtos ###########################");
 
-            return _uof.CategoriaRepository.GetCategoriasProdutos().ToList();
+            var categoria = _uof.CategoriaRepository.GetCategoriasProdutos().ToList();
+
+            var categoriaDTO = _mapper.Map<List<CategoriaDTO>>(categoria);
+
+            return categoriaDTO;
         }
 
         [HttpGet("{id}", Name = "ObterCategoria")] // Atributo Name cria uma rota nomeada, que permite que vincule essa rota a uma resposta Http
-        public ActionResult<Categoria> Get(int id) // Pode retornar um ActionResult ou Categoria, ActionResult são por exemplo os códigos Http (200 = OK, 404 = Not Found)
+        public ActionResult<CategoriaDTO> Get(int id) // Pode retornar um ActionResult ou Categoria, ActionResult são por exemplo os códigos Http (200 = OK, 404 = Not Found)
         {
             _logger.LogInformation($"#################### GET api/categorias/produtos/id = {id} ###########################");
             try
             {
-                var Categoria = _uof.CategoriaRepository.GetById(p => p.CategoriaId == id);
-                if (Categoria == null)
+                var categoria = _uof.CategoriaRepository.GetById(p => p.CategoriaId == id);
+                if (categoria == null)
                 {
                     _logger.LogInformation($"#################### GET api/categorias/produtos/id = {id} NOT FOUND ###########################");
                     return NotFound($"A categoria com id={id} não foi encontrada"); // Status Code 404 
                 }
-                return Categoria;
+
+                var categoriaDTO = _mapper.Map<CategoriaDTO>(categoria);
+
+                return categoriaDTO;
             }
             catch (Exception)
             {
@@ -82,20 +97,24 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpPost]
-        public ActionResult Post([FromBody] Categoria categoria) // Pega os dados do corpo do requisição e passa para o parâmetro Categoria, usando o Model Binding
+        public ActionResult<CategoriaDTO> Post([FromBody] CategoriaDTO categoriaDTO) // Pega os dados do corpo do requisição e passa para o parâmetro Categoria, usando o Model Binding
         {
             // A partir da versao 2.1 do Asp.NET Core a validação abaixo ocorre automaticamente desde que se use o atributo [ApiController]. O retorno do BadRequest também é feito automaticamente
             //if (!ModelState.IsValid) // Faz a validadação dos dados enviados do Categoria enviado no request, ModelState é uma propriedade da classe controller.  
             //{
             //    return BadRequest(ModelState);
             //}
+            var categoria = _mapper.Map<Categoria>(categoriaDTO);
             try
             {
                 _uof.CategoriaRepository.Add(categoria);
                 _uof.Commit();
 
+                // Tem que fazer assim para retorna o criado com id, se retornar direto, categoriaDTO não possui ID ainda 
+                var categoriaDTOCreated = _mapper.Map<CategoriaDTO>(categoria);
+
                 return new CreatedAtRouteResult("ObterCategoria",
-                    new { id = categoria.CategoriaId }, categoria);
+                    new { id = categoria.CategoriaId }, categoriaDTOCreated);
             }
             catch (Exception)
             {
@@ -105,14 +124,16 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpPut("{id}")]
-        public ActionResult Put(int id, [FromBody] Categoria categoria)
+        public ActionResult Put(int id, [FromBody] CategoriaDTO categoriaDTO)
         {
             try
             {
-                if (id != categoria.CategoriaId)
+                if (id != categoriaDTO.CategoriaId)
                 {
                     return BadRequest($"Não foi possível alterar a categoria com o id={id}.");
                 }
+
+                var categoria = _mapper.Map<Categoria>(categoriaDTO);
 
                 _uof.CategoriaRepository.Update(categoria);
                 _uof.Commit();
@@ -127,7 +148,7 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpDelete("{id}")]
-        public ActionResult<Categoria> Delete(int id)
+        public ActionResult<CategoriaDTO> Delete(int id)
         {
             try
             {
@@ -142,7 +163,9 @@ namespace ApiCatalogo.Controllers
 
                 _uof.CategoriaRepository.Delete(categoria);
                 _uof.Commit();
-                return categoria;
+
+                var categoriaDTO = _mapper.Map<CategoriaDTO>(categoria);
+                return categoriaDTO;
             }
             catch (Exception)
             {
