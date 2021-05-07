@@ -1,12 +1,12 @@
-﻿using ApiCatalogo.Context;
-using ApiCatalogo.Models;
+﻿using ApiCatalogo.Models;
+using ApiCatalogo.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
@@ -14,18 +14,35 @@ namespace ApiCatalogo.Controllers
     [ApiController]
     public class CategoriasController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public CategoriasController(AppDbContext contexto)
+        private readonly IUnitOfWork _uof;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger _logger;
+
+        public CategoriasController(IUnitOfWork contexto, IConfiguration configuration,
+            ILogger<CategoriasController> logger)
         {
-            _context = contexto;
+            _uof = contexto;
+            _configuration = configuration;
+            _logger = logger;
         }
+
+        [HttpGet("autor")]
+        public ActionResult<string> GetAutor()
+        {
+            var autor = _configuration["Autor"];
+            var conexão = _configuration["ConnectionStrings:DefaultConnection"];
+            return Ok($"Autor: {autor} \n\nConexão: {conexão}");
+        }
+
 
         [HttpGet]
         public ActionResult<IEnumerable<Categoria>> Get() // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
+            _logger.LogInformation("#################### GET api/categorias ###########################");
+
             try
             {
-                return _context.Categorias.AsNoTracking().ToList(); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
+                return _uof.CategoriaRepository.Get().ToList(); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
             }
             catch (Exception)
             {
@@ -37,18 +54,21 @@ namespace ApiCatalogo.Controllers
         [HttpGet("produtos")] // Vai compor a rota padrao Ex: api/categorias/produtos
         public ActionResult<IEnumerable<Categoria>> GetCategoriasProdutos()
         {
-            return _context.Categorias.Include(x => x.Produtos).ToList();
+            _logger.LogInformation("#################### GET api/categorias/produtos ###########################");
+
+            return _uof.CategoriaRepository.GetCategoriasProdutos().ToList();
         }
 
         [HttpGet("{id}", Name = "ObterCategoria")] // Atributo Name cria uma rota nomeada, que permite que vincule essa rota a uma resposta Http
         public ActionResult<Categoria> Get(int id) // Pode retornar um ActionResult ou Categoria, ActionResult são por exemplo os códigos Http (200 = OK, 404 = Not Found)
         {
+            _logger.LogInformation($"#################### GET api/categorias/produtos/id = {id} ###########################");
             try
             {
-                var Categoria = _context.Categorias.AsNoTracking(). // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
-                FirstOrDefault(p => p.CategoriaId == id);
+                var Categoria = _uof.CategoriaRepository.GetById(p => p.CategoriaId == id);
                 if (Categoria == null)
                 {
+                    _logger.LogInformation($"#################### GET api/categorias/produtos/id = {id} NOT FOUND ###########################");
                     return NotFound($"A categoria com id={id} não foi encontrada"); // Status Code 404 
                 }
                 return Categoria;
@@ -58,7 +78,7 @@ namespace ApiCatalogo.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                    "Erro ao tentar obter as categorias do banco de dados");
             }
-            
+
         }
 
         [HttpPost]
@@ -71,8 +91,8 @@ namespace ApiCatalogo.Controllers
             //}
             try
             {
-                _context.Categorias.Add(categoria);
-                _context.SaveChanges();
+                _uof.CategoriaRepository.Add(categoria);
+                _uof.Commit();
 
                 return new CreatedAtRouteResult("ObterCategoria",
                     new { id = categoria.CategoriaId }, categoria);
@@ -82,8 +102,6 @@ namespace ApiCatalogo.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                    "Erro ao tentar criar uma nova categoria");
             }
-            
-
         }
 
         [HttpPut("{id}")]
@@ -96,8 +114,8 @@ namespace ApiCatalogo.Controllers
                     return BadRequest($"Não foi possível alterar a categoria com o id={id}.");
                 }
 
-                _context.Entry(categoria).State = EntityState.Modified;
-                _context.SaveChanges();
+                _uof.CategoriaRepository.Update(categoria);
+                _uof.Commit();
                 return Ok($"Categoria com id={id} foi atualizada com sucesso!");
             }
             catch (Exception)
@@ -105,7 +123,7 @@ namespace ApiCatalogo.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                    $"Erro ao tentar atualizar a categoria com id={id}.");
             }
-            
+
         }
 
         [HttpDelete("{id}")]
@@ -113,17 +131,17 @@ namespace ApiCatalogo.Controllers
         {
             try
             {
-                var categoria = _context.Categorias.FirstOrDefault(p => p.CategoriaId == id); // FirstOrDefault sempre vai no banco
+                var categoria = _uof.CategoriaRepository.GetById(p => p.CategoriaId == id); // FirstOrDefault sempre vai no banco
                 //Outra forma de pesquisar
-                //var categoria = _context.Categorias.Find(id); // Find procura na memória antes de ir no banco, mas só posso usar se o parametro pesquisado for chave primária na tabela
+                //var categoria = _uof.Categorias.Find(id); // Find procura na memória antes de ir no banco, mas só posso usar se o parametro pesquisado for chave primária na tabela
 
                 if (categoria == null)
                 {
                     return NotFound($"A categoria com o id={id} não foi encontrada.");
                 }
 
-                _context.Categorias.Remove(categoria);
-                _context.SaveChanges();
+                _uof.CategoriaRepository.Delete(categoria);
+                _uof.Commit();
                 return categoria;
             }
             catch (Exception)
@@ -131,7 +149,7 @@ namespace ApiCatalogo.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                    $"Erro ao excluir a cetegoria de id={id}");
             }
-            
+
         }
 
     }
