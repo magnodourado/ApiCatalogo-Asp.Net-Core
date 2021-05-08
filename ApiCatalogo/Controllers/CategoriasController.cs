@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
@@ -42,13 +43,14 @@ namespace ApiCatalogo.Controllers
 
 
         [HttpGet]
-        public ActionResult<IEnumerable<CategoriaDTO>> Get([FromQuery] CategoriasParameters categoriasParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]
+        public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get([FromQuery] CategoriasParameters categoriasParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
             _logger.LogInformation("#################### GET api/categorias ###########################");
 
             try
             {
-                var categoria = _uof.CategoriaRepository.GetCategorias(categoriasParameters); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
+                var categoria = await _uof.CategoriaRepository.
+                        GetCategorias(categoriasParameters); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
 
                 var metadata = new
                 {
@@ -74,11 +76,11 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpGet("produtos")] // Vai compor a rota padrao Ex: api/categorias/produtos
-        public ActionResult<IEnumerable<CategoriaDTO>> GetCategoriasProdutos()
+        public async Task<ActionResult<IEnumerable<CategoriaDTO>>> GetCategoriasProdutos()
         {
             _logger.LogInformation("#################### GET api/categorias/produtos ###########################");
 
-            var categoria = _uof.CategoriaRepository.GetCategoriasProdutos().ToList();
+            var categoria = await _uof.CategoriaRepository.GetCategoriasProdutos();
 
             var categoriaDTO = _mapper.Map<List<CategoriaDTO>>(categoria);
 
@@ -86,12 +88,12 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpGet("{id}", Name = "ObterCategoria")] // Atributo Name cria uma rota nomeada, que permite que vincule essa rota a uma resposta Http
-        public ActionResult<CategoriaDTO> Get(int id) // Pode retornar um ActionResult ou Categoria, ActionResult são por exemplo os códigos Http (200 = OK, 404 = Not Found)
+        public async Task<ActionResult<CategoriaDTO>> Get(int id) // Pode retornar um ActionResult ou Categoria, ActionResult são por exemplo os códigos Http (200 = OK, 404 = Not Found)
         {
             _logger.LogInformation($"#################### GET api/categorias/produtos/id = {id} ###########################");
             try
             {
-                var categoria = _uof.CategoriaRepository.GetById(p => p.CategoriaId == id);
+                var categoria = await _uof.CategoriaRepository.GetById(p => p.CategoriaId == id);
                 if (categoria == null)
                 {
                     _logger.LogInformation($"#################### GET api/categorias/produtos/id = {id} NOT FOUND ###########################");
@@ -111,7 +113,7 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpPost]
-        public ActionResult<CategoriaDTO> Post([FromBody] CategoriaDTO categoriaDTO) // Pega os dados do corpo do requisição e passa para o parâmetro Categoria, usando o Model Binding
+        public async Task<ActionResult<CategoriaDTO>> Post([FromBody] CategoriaDTO categoriaDTO) // Pega os dados do corpo do requisição e passa para o parâmetro Categoria, usando o Model Binding
         {
             // A partir da versao 2.1 do Asp.NET Core a validação abaixo ocorre automaticamente desde que se use o atributo [ApiController]. O retorno do BadRequest também é feito automaticamente
             //if (!ModelState.IsValid) // Faz a validadação dos dados enviados do Categoria enviado no request, ModelState é uma propriedade da classe controller.  
@@ -122,7 +124,7 @@ namespace ApiCatalogo.Controllers
             try
             {
                 _uof.CategoriaRepository.Add(categoria);
-                _uof.Commit();
+                await _uof.Commit();
 
                 // Tem que fazer assim para retorna o criado com id, se retornar direto, categoriaDTO não possui ID ainda 
                 var categoriaDTOCreated = _mapper.Map<CategoriaDTO>(categoria);
@@ -138,7 +140,7 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpPut("{id}")]
-        public ActionResult Put(int id, [FromBody] CategoriaDTO categoriaDTO)
+        public async Task<ActionResult> Put(int id, [FromBody] CategoriaDTO categoriaDTO)
         {
             try
             {
@@ -150,7 +152,7 @@ namespace ApiCatalogo.Controllers
                 var categoria = _mapper.Map<Categoria>(categoriaDTO);
 
                 _uof.CategoriaRepository.Update(categoria);
-                _uof.Commit();
+                await _uof.Commit();
                 return Ok($"Categoria com id={id} foi atualizada com sucesso!");
             }
             catch (Exception)
@@ -162,11 +164,11 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpDelete("{id}")]
-        public ActionResult<CategoriaDTO> Delete(int id)
+        public async Task<ActionResult<CategoriaDTO>> Delete(int id)
         {
             try
             {
-                var categoria = _uof.CategoriaRepository.GetById(p => p.CategoriaId == id); // FirstOrDefault sempre vai no banco
+                var categoria = await _uof.CategoriaRepository.GetById(p => p.CategoriaId == id); // FirstOrDefault sempre vai no banco
                 //Outra forma de pesquisar
                 //var categoria = _uof.Categorias.Find(id); // Find procura na memória antes de ir no banco, mas só posso usar se o parametro pesquisado for chave primária na tabela
 
@@ -176,7 +178,7 @@ namespace ApiCatalogo.Controllers
                 }
 
                 _uof.CategoriaRepository.Delete(categoria);
-                _uof.Commit();
+                await _uof.Commit();
 
                 var categoriaDTO = _mapper.Map<CategoriaDTO>(categoria);
                 return categoriaDTO;

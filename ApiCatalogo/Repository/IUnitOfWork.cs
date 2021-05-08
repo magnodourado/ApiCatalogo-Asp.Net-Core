@@ -9,7 +9,7 @@ namespace ApiCatalogo.Repository
     {
         IProdutoRepository ProdutoRepository { get; }
         ICategoriaRepository CategoriaRepository { get; }
-        void Commit();
+        Task Commit();
         void Dispose();
     }
 }
