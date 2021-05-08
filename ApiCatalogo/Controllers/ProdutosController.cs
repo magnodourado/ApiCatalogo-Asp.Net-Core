@@ -1,6 +1,7 @@
 ﻿using ApiCatalogo.DTOs;
 using ApiCatalogo.Filters;
 using ApiCatalogo.Models;
+using ApiCatalogo.Pagination;
 using ApiCatalogo.Repository;
 using ApiCatalogo.Services;
 using AutoMapper;
@@ -25,9 +26,9 @@ namespace ApiCatalogo.Controllers
 
         [HttpGet]
         [ServiceFilter(typeof(ApiLoggingFilter))]
-        public ActionResult<IEnumerable<ProdutoDTO>> Get() // O nome do método não altera o comportamento e sim o decorator [HttpGet]
+        public ActionResult<IEnumerable<ProdutoDTO>> Get([FromQuery] ProdutosParameters produtosParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
-            var produtos = _uof.ProdutoRepository.Get().ToList();
+            var produtos = _uof.ProdutoRepository.GetProdutos(produtosParameters).ToList();
 
             var produtosDTO = _mapper.Map<List<ProdutoDTO>>(produtos);
 

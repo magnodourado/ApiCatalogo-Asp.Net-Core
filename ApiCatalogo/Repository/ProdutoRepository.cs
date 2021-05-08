@@ -1,5 +1,6 @@
 ﻿using ApiCatalogo.Context;
 using ApiCatalogo.Models;
+using ApiCatalogo.Pagination;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,14 @@ namespace ApiCatalogo.Repository
         public Produto GetProdutoPrimeiro()
         {
             return Get().FirstOrDefault();
+        }
+        public IEnumerable<Produto> GetProdutos(ProdutosParameters produtosParameters)
+        {
+            return Get()
+                .OrderBy(on => on.Nome)
+                .Skip((produtosParameters.PageNumber - 1) * produtosParameters.PageSize)
+                .Take(produtosParameters.PageSize)
+                .ToList();
         }
     }
 }
