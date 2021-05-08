@@ -12,3 +12,4 @@ Conceitos applicados:
 - Middleware para tratamento de exceções - UseExceptionHandler.
 - Padrão Repository com UnitOfWork
 - Padrão DTO com AutoMapper
+- Paginação de dados
