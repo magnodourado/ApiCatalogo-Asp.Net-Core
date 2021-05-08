@@ -1,11 +1,13 @@
 ﻿using ApiCatalogo.DTOs;
 using ApiCatalogo.Models;
+using ApiCatalogo.Pagination;
 using ApiCatalogo.Repository;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,13 +42,25 @@ namespace ApiCatalogo.Controllers
 
 
         [HttpGet]
-        public ActionResult<IEnumerable<CategoriaDTO>> Get() // O nome do método não altera o comportamento e sim o decorator [HttpGet]
+        public ActionResult<IEnumerable<CategoriaDTO>> Get([FromQuery] CategoriasParameters categoriasParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
             _logger.LogInformation("#################### GET api/categorias ###########################");
 
             try
             {
-                var categoria = _uof.CategoriaRepository.Get().ToList(); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
+                var categoria = _uof.CategoriaRepository.GetCategorias(categoriasParameters); // AsNoTracking - usado para otimizar consultas quando não vai alterar o retorno, desabilita o rastreamento de estado do EF. 
+
+                var metadata = new
+                {
+                    categoria.TotalCount,
+                    categoria.PageSize,
+                    categoria.CurrentPage,
+                    categoria.TotalPages,
+                    categoria.HasNext,
+                    categoria.HasPrevius
+                };
+
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metadata));
 
                 var categoriaDTO = _mapper.Map<List<CategoriaDTO>>(categoria);
 
