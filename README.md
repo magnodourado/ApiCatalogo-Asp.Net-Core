@@ -9,7 +9,9 @@ Conceitos applicados:
 - Data Annotations
 - Filtros Personalizados
 - Log com Loggin
-- Middleware para tratamento de exceções - UseExceptionHandler.
+- Middleware para tratamento de exceções - UseExceptionHandler
 - Padrão Repository com UnitOfWork
 - Padrão DTO com AutoMapper
 - Paginação de dados
+- Segurança com Identity e JWT
+- Implementado o CORS
