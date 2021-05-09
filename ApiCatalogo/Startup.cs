@@ -41,6 +41,7 @@ namespace ApiCatalogo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
             services.AddCors();
 
             // Conexão com o BD
@@ -90,6 +91,20 @@ namespace ApiCatalogo
             // Transient - vai ser criada cada vez que for solicitada, sempre um objeto novo.
             // Scoped - vai ser criado uma vez dentro da requisição, ao final ele é destruído.
             // Singleton - vai ser criado uma unica instancia geral quando se inicia a api, sempre mesmo objeto.
+
+            // Versionamento da API
+            services.AddApiVersioning(options =>
+            {
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.ReportApiVersions = true;
+            });
+
+            services.AddVersionedApiExplorer(option =>
+            {
+                option.GroupNameFormat = "'v'VVV"; // "'v'VVV" = v+MajorVersion+MinorVersion+Patch
+                option.SubstituteApiVersionInUrl = true; // Exibir a versão na URL
+            });
 
             // Filtro Personalizado
             services.AddScoped<ApiLoggingFilter>();

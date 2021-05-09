@@ -15,7 +15,9 @@ using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
-    //[Authorize(AuthenticationSchemes = "Bearer")]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[Controller]")] // Base do endpoint
     [ApiController]
     public class ProdutosController : ControllerBase
@@ -28,6 +30,7 @@ namespace ApiCatalogo.Controllers
             _mapper = mapper;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         [ServiceFilter(typeof(ApiLoggingFilter))]
         public async Task<ActionResult<IEnumerable<ProdutoDTO>>> Get([FromQuery] ProdutosParameters produtosParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]

@@ -43,7 +43,7 @@ namespace ApiCatalogo.Controllers
             return Ok($"Autor: {autor} \n\nConexão: {conexão}");
         }
 
-
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get([FromQuery] CategoriasParameters categoriasParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
