@@ -41,6 +41,8 @@ namespace ApiCatalogo
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
+
             // Conexão com o BD
             string mySqlConnection = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<AppDbContext>(options => 
@@ -121,6 +123,11 @@ namespace ApiCatalogo
             app.UseAuthentication();
             
             app.UseAuthorization();
+
+            //app.UseCors(option => option.WithOrigins("http://apirequest.io", "https://apirequest.io", "apirequest.io"));
+
+            app.UseCors(option => option.AllowAnyOrigin());
+
 
             app.UseEndpoints(endpoints =>
             {

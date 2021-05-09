@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer")]
+    //[Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[Controller]")] // Base do endpoint
     [ApiController]
     public class ProdutosController : ControllerBase
