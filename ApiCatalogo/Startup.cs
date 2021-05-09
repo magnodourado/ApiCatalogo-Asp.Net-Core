@@ -6,19 +6,23 @@ using ApiCatalogo.Logging;
 using ApiCatalogo.Repository;
 using ApiCatalogo.Services;
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Pomelo.EntityFrameworkCore.MySql.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ApiCatalogo
@@ -41,6 +45,31 @@ namespace ApiCatalogo
             string mySqlConnection = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<AppDbContext>(options => 
                 options.UseMySql(mySqlConnection, ServerVersion.AutoDetect(mySqlConnection)));
+
+            services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+
+            // JWT
+            // Adiciona  o manipulador de autenticação e define o
+            // esquema de autenticação usado: Bearer
+            // Valida o emissor, a audiencia e a chave
+            // Usando a chave secreta valida a assinatura
+            services.AddAuthentication(
+                JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidAudience = Configuration["TokenConfiguration:Audience"],
+                    ValidIssuer = Configuration["TokenConfiguration:Issuer"],
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                });
+
 
             // Repositório utilizando o padrão Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -89,6 +118,8 @@ namespace ApiCatalogo
 
             app.UseRouting();
 
+            app.UseAuthentication();
+            
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

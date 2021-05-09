@@ -5,6 +5,7 @@ using ApiCatalogo.Pagination;
 using ApiCatalogo.Repository;
 using ApiCatalogo.Services;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
@@ -14,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[Controller]")] // Base do endpoint
     [ApiController]
     public class ProdutosController : ControllerBase
