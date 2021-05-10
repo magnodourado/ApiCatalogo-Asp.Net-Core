@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
+    [Produces("application/json")]
     [Route("api/[controller]")]
     [ApiController]
     public class AutorizaController : ControllerBase

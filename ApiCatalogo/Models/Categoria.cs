@@ -38,7 +38,7 @@ namespace ApiCatalogo.Models
         //public string ConfirmaSenha { get; set; }
 
         // IMPORTANTE: Uma alternativa a esse tipo de validação seria utiizar Fluent API
-        /// http://www.macoratti.net/15/03/ef_fluent1.htm
+        // http://www.macoratti.net/15/03/ef_fluent1.htm
 
     }
 }

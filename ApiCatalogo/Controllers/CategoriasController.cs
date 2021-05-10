@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
+    [Produces("application/json")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     [Route("api/[Controller]")]
     [ApiController]
@@ -43,7 +44,7 @@ namespace ApiCatalogo.Controllers
             return Ok($"Autor: {autor} \n\nConexão: {conexão}");
         }
 
-        [AllowAnonymous]
+        //[AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoriaDTO>>> Get([FromQuery] CategoriasParameters categoriasParameters) // O nome do método não altera o comportamento e sim o decorator [HttpGet]
         {
@@ -89,6 +90,13 @@ namespace ApiCatalogo.Controllers
             return categoriaDTO;
         }
 
+        /// <summary>
+        /// Obtem uma categoria por id
+        /// </summary>
+        /// <param name="id">codigo da categoria</param>
+        /// <returns>Objeto Categoria</returns>
+        [ProducesResponseType(typeof(CategoriaDTO), StatusCodes.Status200OK)] //Swagger
+        [ProducesResponseType(StatusCodes.Status404NotFound)] //Swagger
         [HttpGet("{id}", Name = "ObterCategoria")] // Atributo Name cria uma rota nomeada, que permite que vincule essa rota a uma resposta Http
         public async Task<ActionResult<CategoriaDTO>> Get(int id) // Pode retornar um ActionResult ou Categoria, ActionResult são por exemplo os códigos Http (200 = OK, 404 = Not Found)
         {
@@ -114,7 +122,23 @@ namespace ApiCatalogo.Controllers
 
         }
 
+        /// <summary>
+        /// Inclui uma nova categoria
+        /// </summary>
+        /// <remarks>
+        /// Exemplo de request:
+        /// 
+        ///     POST api/categorias
+        ///     {
+        ///         "nome": "Teste Categoria",
+        ///         "imagemUrl": "http://www.wedoostudio.com.br/Imagens/1.jpg"
+        ///     }
+        /// </remarks>
+        /// <param name="categoriaDTO">objeto categoria</param>
+        /// <returns>Retorna o objeto Categoria incluído</returns>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)] //Swagger
+        [ProducesResponseType(StatusCodes.Status400BadRequest)] //Swagger
         public async Task<ActionResult<CategoriaDTO>> Post([FromBody] CategoriaDTO categoriaDTO) // Pega os dados do corpo do requisição e passa para o parâmetro Categoria, usando o Model Binding
         {
             // A partir da versao 2.1 do Asp.NET Core a validação abaixo ocorre automaticamente desde que se use o atributo [ApiController]. O retorno do BadRequest também é feito automaticamente
@@ -142,6 +166,7 @@ namespace ApiCatalogo.Controllers
         }
 
         [HttpPut("{id}")]
+        [ApiConventionMethod(typeof(DefaultApiConventions), nameof(DefaultApiConventions.Put))] //Swagger
         public async Task<ActionResult> Put(int id, [FromBody] CategoriaDTO categoriaDTO)
         {
             try

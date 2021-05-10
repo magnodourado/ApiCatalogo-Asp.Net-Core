@@ -18,10 +18,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Pomelo.EntityFrameworkCore.MySql.Storage;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -113,6 +116,61 @@ namespace ApiCatalogo
                 // Evitar erro de referência cíclica
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
+
+            //Swagger
+            services.AddSwaggerGen(options => {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Version = "v1",
+                    Title = "APICatalogo",
+                    Description = "Catálogo de Produtos e Categorias",
+                    TermsOfService = new Uri("https://wedoostudio.com.br/terms"),
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Magno Dourado",
+                        Email = "luiz.ti@live.com",
+                        Url = new Uri("https://wedoostudio.com.br")
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "Usar sobre LICX",
+                        Url = new Uri("https://wedoostudio.com.br/license")
+                    }
+                });
+
+                // Adicinar os comentários na documentação do swagger
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                options.IncludeXmlComments(xmlPath);
+
+                // Para habilitar o uso do JwtToken no swagger
+                options.AddSecurityDefinition(
+                    "Bearer",
+                    new OpenApiSecurityScheme
+                    {
+                        Name = "Authorization",
+                        Type = SecuritySchemeType.ApiKey,
+                        Scheme = "Bearer",
+                        BearerFormat = "JWT",
+                        In = ParameterLocation.Header,
+                        Description = "JWT Authorization header using the Bearer scheme."
+                    });
+
+                options.AddSecurityRequirement(
+                    new OpenApiSecurityRequirement{
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -143,6 +201,15 @@ namespace ApiCatalogo
 
             app.UseCors(option => option.AllowAnyOrigin());
 
+            //Swagger
+            app.UseSwagger();
+
+            //Swagger UI
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json",
+                    "Catálogo de Produtos e Categorias");
+            });
 
             app.UseEndpoints(endpoints =>
             {

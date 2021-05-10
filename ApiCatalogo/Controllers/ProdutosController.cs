@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 
 namespace ApiCatalogo.Controllers
 {
+    [ApiConventionType(typeof(DefaultApiConventions))] // Swagger
+    [Produces("application/json")]
     [ApiVersion("1.0")]
     [ApiVersion("2.0")]
     [Authorize(AuthenticationSchemes = "Bearer")]
